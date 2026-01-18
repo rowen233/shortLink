@@ -1,0 +1,104 @@
+name: CI Check
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    
+    - name: Download dependencies
+      run: go mod download
+    
+    - name: Verify dependencies
+      run: go mod verify
+    
+    - name: Build
+      run: go build -v ./cmd/api
+    
+    - name: Run tests
+      run: go test -v ./...
+  
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build Docker image
+      run: docker build -t shortlink:test .
+    
+    - name: Test Docker Compose
+      run: |
+        docker-compose up -d
+        sleep 10
+        
+        # 健康检查
+        curl --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8080/health
+        
+        # 测试创建短链接
+        response=$(curl -s -X POST http://localhost:8080/api/shorten \
+          -H "Content-Type: application/json" \
+          -d '{"url": "https://github.com"}')
+        
+        echo "Response: $response"
+        
+        # 检查响应是否包含short_code
+        if echo "$response" | grep -q "short_code"; then
+          echo "✅ Short link creation test passed"
+        else
+          echo "❌ Short link creation test failed"
+          exit 1
+        fi
+        
+        # 清理
+        docker-compose down
+    
+    - name: Docker Compose Down
+      if: always()
+      run: docker-compose down -v
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        args: --timeout=5m
