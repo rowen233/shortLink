@@ -19,7 +19,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize Redis repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() {
+		if err := repo.Close(); err != nil {
+			log.Printf("Failed to close Redis connection: %v", err)
+		}
+	}()
 
 	log.Println("Successfully connected to Redis")
 
