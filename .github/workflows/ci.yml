@@ -56,7 +56,7 @@ jobs:
     
     - name: Test Docker Compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 10
         
         # 健康检查
@@ -78,11 +78,11 @@ jobs:
         fi
         
         # 清理
-        docker-compose down
+        docker compose down
     
     - name: Docker Compose Down
       if: always()
-      run: docker-compose down -v
+      run: docker compose down -v
 
   lint:
     name: Lint
@@ -100,5 +100,5 @@ jobs:
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v3
       with:
-        version: latest
-        args: --timeout=5m
+        version: v1.55
+        args: --timeout=5m --skip-dirs=bin
