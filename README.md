@@ -49,24 +49,26 @@ shortLink/
 - Docker 20.10+
 - Docker Compose 2.0+
 
+> **仅需 Docker！** 无需安装 Go、Redis 或其他依赖
+
 ### 一键启动
 
 ```bash
 # 克隆项目
-git clone <repository-url>
+git clone https://github.com/rowen233/shortLink.git
 cd shortLink
 
-# 编译二进制文件（首次启动需要）
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o bin/shortlink ./cmd/api
-
-# 启动所有服务
+# 启动所有服务（Docker 会自动构建）
 docker-compose up -d
 
 # 查看日志
 docker-compose logs -f
 ```
 
-> **注意**: 本项目使用本地编译方案，需要先编译二进制文件再启动 Docker。如果你是 x86 架构，请将 GOARCH 改为 amd64。
+> **注意**: 
+> - 首次启动会自动下载镜像并编译，需要几分钟时间
+> - 确保 Docker 和 Docker Compose 已安装
+> - 无需安装 Go 或 Redis
 
 服务将在以下端口启动：
 - API服务: `http://localhost:8080`
@@ -143,17 +145,17 @@ environment:
 
 ## 本地开发
 
-### 方式 1: 使用 Docker（推荐）
+### 方式 1: 使用 Docker（推荐，无需安装 Go）
 
 ```bash
-# 1. 编译二进制文件
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o bin/shortlink ./cmd/api
-
-# 2. 启动服务
+# 启动服务（Docker 会自动编译）
 docker-compose up -d
+
+# 查看日志
+docker-compose logs -f api
 ```
 
-### 方式 2: 本地直接运行
+### 方式 2: 本地直接运行（需要安装 Go）
 
 ```bash
 # 1. 安装依赖
